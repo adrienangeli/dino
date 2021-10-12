@@ -37,6 +37,6 @@
         type: integer
         default: 16
       - name: checkpoint_key
-        description: Key to use in the checkpoint (example: teacher)
+        description: "Key to use in the checkpoint (exemple: 'teacher')"
         type: string
         default: teacher
