@@ -17,7 +17,7 @@
         type: flag
         pass-true-as: --multiscale=1
         pass-false-as: --multiscale=0
-	default: true
+        default: true
       - name: data_path
         description: /path/to/revisited_paris_oxford/
         type: string
@@ -30,19 +30,19 @@
         description: Path to pretrained weights to evaluate
         type: string
         default:
-	optional: true
+        optional: true
       - name: arch
         description: Architecture
         type: string
         default: vit_small
-	optional: true
+        optional: true
       - name: patch_size
         description: Patch resolution of the model
         type: integer
         default: 16
-	optional: true
+        optional: true
       - name: checkpoint_key
         description: "Key to use in the checkpoint (exemple: 'teacher')"
         type: string
         default: teacher
-	optional: true
+        optional: true
