@@ -2,7 +2,7 @@
     name: inference
     image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     command:
-      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
+      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz -C /valohai/inputs/data
       - python -m eval_image_retrieval_sequential {parameters}
     inputs:
       - name: data
