@@ -89,6 +89,8 @@
       - name: use_cuda
         description: Use cuda
         type: flag
+        pass-true-as: --use_cuda=True
+        pass-false-as: --use_cuda=False
         default: true
       - name: arch
         description: Architecture
