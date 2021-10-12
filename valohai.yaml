@@ -9,8 +9,8 @@
           - http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/oxbuild_images.tgz
       - name: data/OxfordParis/datasets/rparis6k
         default:
-      	  - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_1.tgz
-	  - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_2.tgz
+          - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_1.tgz
+          - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_2.tgz
     parameters:
       - name: imsize
         description: Input image size
