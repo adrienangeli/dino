@@ -1,25 +1,13 @@
 - step:
-    name: prepare_data
-    image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
-    command:
-      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
-    inputs:
-      - name: data
-        default:
-          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
-
-- step:
     name: inference
     image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     command:
+      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
       - python -m eval_image_retrieval_sequential {parameters}
     inputs:
-      - name: data/OxfordParis/datasets/rparis6k/
+    - name: data
         default:
-          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis/datasets/rparis6k/*
-      - name: data/OxfordParis/datasets/roxford5k/
-        default:
-          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis/datasets/roxford5k/*
+          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
     parameters:
       - name: imsize
         description: Input image size
