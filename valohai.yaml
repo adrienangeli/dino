@@ -4,7 +4,7 @@
     command:
       - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
     inputs:
-      - name: data/OxfordParis.tgz
+      - name: data
         default:
           - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
 
