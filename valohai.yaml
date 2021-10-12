@@ -2,7 +2,7 @@
     name: prepare_data
     image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     command:
-      - tar -zxvf data/OxfordParis.tgz
+      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
     inputs:
       - name: data/OxfordParis.tgz
         default:
