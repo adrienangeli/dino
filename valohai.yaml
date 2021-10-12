@@ -6,7 +6,7 @@
     inputs:
       - name: data
         default:
-          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
+          - s3://jsk-valohai/dino-image-retrieval/data/
     parameters:
       - name: imsize
         description: Input image size
