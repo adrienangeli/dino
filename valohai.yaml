@@ -4,9 +4,13 @@
     command:
       - python -m eval_image_retrieval_sequential.py {parameters}
     inputs:
-      - name: data
+      - name: data/OxfordParis/datasets/roxford5k
         default:
-          - s3://jsk-valohai/dino-image-retrieval/data
+          - http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/oxbuild_images.tgz
+      - name: data/OxfordParis/datasets/rparis6k
+        default:
+      	  - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_1.tgz
+	  - http://www.robots.ox.ac.uk/~vgg/data/parisbuildings/paris_2.tgz
     parameters:
       - name: imsize
         description: Input image size
