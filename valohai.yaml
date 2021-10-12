@@ -16,7 +16,7 @@
         description: Whether to enable multiscale image feature extraction or not
         type: flag
         pass-true-as: --multiscale=1
-	pass-false-as: --multiscale=0
+        pass-false-as: --multiscale=0
       - name: data_path
         description: /path/to/revisited_paris_oxford/
         type: string
