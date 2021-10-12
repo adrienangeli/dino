@@ -14,8 +14,9 @@
         default: 512
       - name: multiscale
         description: Whether to enable multiscale image feature extraction or not
-        type: bool
-        default: false
+        type: flag
+        pass-true-as: --multiscale=1
+	pass-false-as: --multiscale=0
       - name: data_path
         description: /path/to/revisited_paris_oxford/
         type: string
