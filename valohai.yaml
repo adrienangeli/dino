@@ -1,0 +1,42 @@
+- step:
+    name: inference
+    image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+    command:
+      - python -m eval_image_retrieval_sequential.py {parameters}
+    inputs:
+      - name: data
+        default:
+          - s3://jsk-valohai/dino-image-retrieval/data/*
+    parameters:
+      - name: imsize
+        description: Input image size
+        type: integer
+        default: 512
+      - name: multiscale
+        description: Whether to enable multiscale image feature extraction or not
+        type: bool
+        default: false
+      - name: data_path
+        description: /path/to/revisited_paris_oxford/
+        type: string
+        default: data/OxfordParis
+      - name: dataset
+        description: Name of the dataset to use
+        type: string
+        default: rparis6k
+      - name: pretrained_weights
+        description: Path to pretrained weights to evaluate
+        type: string
+        default:
+      - name: arch
+        description: Architecture
+        type: string
+        default: vit_small
+      - name: patch_size
+        description: Patch resolution of the model
+        type: integer
+        default: 16
+      - name: checkpoint_key
+        description: Key to use in the checkpoint (example: "teacher")
+        type: string
+        default: teacher
