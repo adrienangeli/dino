@@ -5,9 +5,10 @@
       - tar -zxvf /valohai/inputs/data/OxfordParis.tgz
       - python -m eval_image_retrieval_sequential {parameters}
     inputs:
-    - name: data
+      - name: data
         default:
           - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
+
     parameters:
       - name: imsize
         description: Input image size
