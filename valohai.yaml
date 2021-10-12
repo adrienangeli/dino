@@ -48,3 +48,64 @@
         type: string
         default: teacher
         optional: true
+
+
+
+- step:
+    name: inference-gpu
+    image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+    command:
+      - tar -zxvf /valohai/inputs/data/OxfordParis.tgz -C /valohai/inputs/data
+      - python -m torch.distributed.launch --use_env --nproc_per_node=1 eval_image_retrieval.py {parameters}
+    inputs:
+      - name: data
+        default:
+          - s3://jsk-valohai/dino-image-retrieval/data/OxfordParis.tgz
+
+    parameters:
+      - name: imsize
+        description: Input image size
+        type: integer
+        default: 512
+      - name: multiscale
+        description: Whether to enable multiscale image feature extraction or not
+        type: flag
+        pass-true-as: --multiscale=1
+        pass-false-as: --multiscale=0
+        default: true
+      - name: data_path
+        description: /path/to/revisited_paris_oxford/
+        type: string
+        default: /valohai/inputs/data/OxfordParis/datasets
+      - name: dataset
+        description: Name of the dataset to use
+        type: string
+        default: rparis6k
+      - name: pretrained_weights
+        description: Path to pretrained weights to evaluate
+        type: string
+        default:
+        optional: true
+      - name: use_cuda
+        description: Use cuda
+        type: flag
+        default: true
+      - name: arch
+        description: Architecture
+        type: string
+        default: vit_small
+        optional: true
+      - name: patch_size
+        description: Patch resolution of the model
+        type: integer
+        default: 16
+        optional: true
+      - name: checkpoint_key
+        description: "Key to use in the checkpoint (exemple: 'teacher')"
+        type: string
+        default: teacher
+        optional: true
+      - name: num_workers
+        description: Number of data loading workers per GPU
+        type: integer
+        default: 10
