@@ -21,7 +21,7 @@
       - name: data_path
         description: /path/to/revisited_paris_oxford/
         type: string
-        default: data/OxfordParis
+        default: /valohai/inputs/data/OxfordParis
       - name: dataset
         description: Name of the dataset to use
         type: string
