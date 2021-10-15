@@ -53,10 +53,10 @@
     inputs:
       - name: features_and_labels
         default:
-          - datum://017c849e-6c35-62df-b283-ea4bea17f877
-          - datum://017c849e-6548-62a2-8cd4-4e320bc0ee9e
-          - datum://017c849e-5e77-31e4-fc69-bbf0566a0bf4
-          - datum://017c849e-541f-e85c-1f78-3ace97b15e66
+          - datum://017c85c0-20dd-740d-4b4b-2fda4db6ae60
+          - datum://017c85c0-1a80-b328-be26-120e6950bcc2
+          - datum://017c85c0-13b7-70b2-28c3-f41b95010b79
+          - datum://017c85c0-09fa-d32c-540a-76e8976c6458
     parameters:
       - name: data_path
         description: /path/to/dataset/
