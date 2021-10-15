@@ -118,7 +118,7 @@ def extract_features(model, data_loader, use_cuda=True, multiscale=False):
     for samples, index, lbls in metric_logger.log_every(data_loader, 10):
         samples = samples.cuda(non_blocking=True)
         index = index.cuda(non_blocking=True)
-        lbls = lbls.cpu()
+        lbls = lbls.cuda(non_blocking=True)
         if multiscale:
             feats = utils.multi_scale(samples, model)
         else:
@@ -153,6 +153,13 @@ def extract_features(model, data_loader, use_cuda=True, multiscale=False):
         output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
         output_all_reduce.wait()
 
+        lbls_all = torch.empty(
+            dist.get_world_size(),
+            lbls.size(0),
+            lbls.size(1),
+            dtype=lbls.dtype,
+            device=lbls.device,
+        )
         label_l = list(lbls_all.unbind(0))
         label_all_reduce = torch.distributed.all_gather(label_l, lbls, async_op=True)
         label_all_reduce.wait()
@@ -249,7 +256,7 @@ if __name__ == '__main__':
         dataset = Food101Dataset(args.data_path, transform, train)
 
         num_samples = int(args.dataset_fraction * len(dataset))
-        print(f"Using {num_samples} out of {len(dataset)}")
+        print(f"Using {num_samples} out of {len(dataset)} imgs")
         sampler = torch.utils.data.RandomSampler(dataset, num_samples=num_samples, replacement=True)
     
         data_loader = torch.utils.data.DataLoader(
@@ -259,9 +266,7 @@ if __name__ == '__main__':
             pin_memory=True,
             drop_last=False,
         )
-
-        print(f"dataset: {len(dataset)} imgs")
-
+        
         ############################################################################
         # extract features
         train_features, train_labels = None, None
