@@ -51,20 +51,16 @@
     command:
       - python -m train {parameters}
     inputs:
-      - name: features_and_labels
-        filename: test_labels.pt
+      - name: features_and_labels/test_labels.pt
         default:
           - datum://017c849e-6c35-62df-b283-ea4bea17f877
-      - name: features_and_labels
-        filename: train_labels.pt
+      - name: features_and_labels/train_labels.pt
         default:
           - datum://017c849e-6548-62a2-8cd4-4e320bc0ee9e
-      - name: features_and_labels
-        filename: test_features.pt
+      - name: features_and_labels/test_features.pt
         default:
           - datum://017c849e-5e77-31e4-fc69-bbf0566a0bf4
-      - name: features_and_labels
-        filename: train_features.pt
+      - name: features_and_labels/train_features.pt
         default:
           - datum://017c849e-541f-e85c-1f78-3ace97b15e66
     parameters:
