@@ -23,6 +23,8 @@ from shutil import copytree, rmtree
 
 import torch
 from torch import nn
+import torch.distributed as dist
+import torch.backends.cudnn as cudnn
 
 import torchvision
 from torchvision import models as torchvision_models
