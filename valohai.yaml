@@ -28,6 +28,10 @@
         description: /path/to/where/computed/features/will/be/saved
         type: string
         default: /valohai/outputs/
+      - name: output_prefix
+        description: Prefix prepended to output features and labels filenames
+        type: string
+        default: dino
       - name: distributed
         description: Whether to enable distributed computing or not
         type: flag
