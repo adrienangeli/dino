@@ -20,8 +20,6 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image, ImageFile
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 import utils
 import vision_transformer as vits
 

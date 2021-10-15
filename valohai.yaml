@@ -42,3 +42,41 @@
         pass-true-as: --distributed=1
         pass-false-as: --distributed=0
         default: true
+
+- step:
+    name: training
+    image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+    command:
+      - python -m train {parameters}
+    inputs:
+      - name: features_and_labels
+        default:
+          - datum://017c849e-6c35-62df-b283-ea4bea17f877
+	  - datum://017c849e-6548-62a2-8cd4-4e320bc0ee9e
+	  - datum://017c849e-5e77-31e4-fc69-bbf0566a0bf4
+	  - datum://017c849e-541f-e85c-1f78-3ace97b15e66
+    parameters:
+      - name: data_path
+        description: /path/to/dataset/
+        type: string
+        default: /valohai/inputs/features_and_labels/
+      - name: epochs
+        description: Num of epochs
+        type: integer
+        default: 30
+      - name: batch_size
+        description: Batch size
+        type: integer
+        default: 512
+      - name: nlayers
+        description: Num of layers in MLP
+        type: integer
+        default: 3
+      - name: learning_rate
+        description: Learning rate
+        type: float
+        default: 0.01
+      - name: momentum
+        description: SGD optimizer momentum
+        type: float
+        default: 0.9
