@@ -29,10 +29,16 @@ class FeaturesDataset(torch.utils.data.Dataset):
     def __init__(self, root, prefix, train):
         self.root = root
         self.split = "train" if train else "test"
+        
+        device = 'gpu' if torch.cuda.is_available() else 'cpu'
+        
         self.prefix = prefix
         p_ = '' if self.prefix == '' else self.prefix + "_"
-        self.features = torch.load(os.path.join(self.root, p_ + self.split + "_features.pt"))
-        self.labels = torch.load(os.path.join(self.root, p_ + self.split + "_labels.pt"))
+        fp_ = os.path.join(self.root, p_ + self.split + "_features.pt")
+        self.features = torch.load(fp_, map_location=torch.device(device))
+
+        lp_ = os.path.join(self.root, p_ + self.split + "_labels.pt")
+        self.labels = torch.load(lp_, map_location=torch.device(device))
 
         assert self.features.shape[0] == self.labels.shape[0]
 
