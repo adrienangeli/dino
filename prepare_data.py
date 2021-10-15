@@ -249,7 +249,7 @@ if __name__ == '__main__':
         dataset = Food101Dataset(args.data_path, transform, train)
 
         num_samples = int(args.dataset_fraction * len(dataset))
-        print("Using {num_samples} out of {len(dataset)}")
+        print(f"Using {num_samples} out of {len(dataset)}")
         sampler = torch.utils.data.RandomSampler(dataset, num_samples=num_samples, replacement=True)
     
         data_loader = torch.utils.data.DataLoader(
