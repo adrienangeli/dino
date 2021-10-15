@@ -55,11 +55,12 @@ def prepare_data(filepath, src, dest):
 
 
 class Food101Dataset(torchvision.datasets.ImageFolder):
-    def __init__(self, root_dir, transform, train):
+    def __init__(self, root_dir, transform, dataset_fraction, train):
         self.food_path = root_dir
         self.img_path = os.path.join(self.food_path, "images")
         self.img_ext = ".jpg"
         self.meta_path = os.path.join(self.food_path, "meta")
+        self.dataset_fraction = dataset_fraction
 
         self.split_dirname = "train" if train else "valid"
         self.split_fname = "train.txt" if train else "test.txt"
@@ -72,7 +73,7 @@ class Food101Dataset(torchvision.datasets.ImageFolder):
 
 
     def __len__(self):
-        return super().__len__()
+        return int(dataset_fraction * super().__len__())
 
     
     def __getitem__(self, index):
@@ -170,7 +171,9 @@ def extract_features(model, data_loader, use_cuda=True, multiscale=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('DINO feature computation on an image dataset')
     parser.add_argument('--data_path', default='/path/to/dataset/')
+    parser.add_argument('--dataset_fraction', default=1, type=float, help="Floating number between 0 and 1 representing the fraction of the dataset we will use (e.g., 0.1 means we use 10% of all images in the dataset)")
     parser.add_argument('--output_path', default='/path/to/where/computed/features/will/be/saved')
+    parser.add_argument('--output_prefix', default='dino')
     parser.add_argument('--multiscale', default=False, type=utils.bool_flag)
     parser.add_argument('--imsize', default=224, type=int, help='Image size')
     parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
@@ -179,9 +182,14 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_key", default="teacher", type=str,
         help='Key to use in the checkpoint (example: "teacher")')
     parser.add_argument('--distributed', default=False, type=utils.bool_flag)
+    parser.add_argument('--use_cuda', default=True, type=utils.bool_flag)
+    parser.add_argument('--num_workers', default=10, type=int, help='Number of data loading workers per GPU.')
+    parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up
+        distributed training; see https://pytorch.org/docs/stable/distributed.html""")
+    parser.add_argument("--local_rank", default=0, type=int, help="Please ignore and do not set this argument.")
     args = parser.parse_args()
 
-    if args.distributed:
+    if args.distributed and args.use_cuda:
         utils.init_distributed_mode(args)
         cudnn.benchmark = True
     
@@ -208,7 +216,7 @@ if __name__ == '__main__':
         print(f"Architecture {args.arch} non supported")
         sys.exit(1)
 
-    if args.distributed:
+    if args.distributed and args.use_cuda:
         model.cuda()
     
     model.eval()
@@ -237,7 +245,7 @@ if __name__ == '__main__':
         print(mode + " mode!")
         print("--------------------------------------------------------")
         
-        dataset_train = Food101Dataset(args.data_path, transform, train)
+        dataset_train = Food101Dataset(args.data_path, transform, dataset_fraction, train)
         sampler_train = torch.utils.data.SequentialSampler(dataset_train)
     
         data_loader_train = torch.utils.data.DataLoader(
@@ -254,7 +262,7 @@ if __name__ == '__main__':
         # extract features
         train_features, train_labels = None, None
         if args.distributed:
-            train_features, train_labels = extract_features(model, data_loader_train, multiscale=args.multiscale)
+            train_features, train_labels = extract_features(model, data_loader_train, args.use_cuda, multiscale=args.multiscale)
         else:
             train_features, train_labels = extract_features_sequential(model, data_loader_train, multiscale=args.multiscale)
 
@@ -263,10 +271,14 @@ if __name__ == '__main__':
             train_features = nn.functional.normalize(train_features, dim=1, p=2)
         
             # save features
-            prefix = "train" if train is True else "test"
-            torch.save(train_features, os.path.join(args.output_path, prefix + '_features.pt'))
+            train_or_test_prefix = "train" if train is True else "test"
+            torch.save(train_features,
+                       os.path.join(args.output_path,
+                                    args.output_prefix + '_' + train_or_test_prefix + '_features.pt'))
         
             # save labels
-            torch.save(train_labels, os.path.join(args.output_path, prefix + '_labels.pt'))
+            torch.save(train_labels,
+                       os.path.join(args.output_path,
+                                    args.output_prefix + '_' + train_or_test_prefix + '_labels.pt'))
     
     
