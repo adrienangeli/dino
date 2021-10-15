@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
     print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
     
-    train_dataset = FeaturesDataset(args.data_path, args.prefix, True)
-    test_dataset = FeaturesDataset(args.data_path, args.prefix, False)
+    train_dataset = FeaturesDataset(args.data_path, args.input_prefix, True)
+    test_dataset = FeaturesDataset(args.data_path, args.input_prefix, False)
     
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True)

@@ -62,6 +62,10 @@
         description: /path/to/dataset/
         type: string
         default: /valohai/inputs/features_and_labels/
+      - name: input_prefix
+        description: Prefix prepended to input features and labels filenames
+        type: string
+        default: dino
       - name: epochs
         description: Num of epochs
         type: integer
