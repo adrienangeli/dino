@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
         num_samples = int(args.dataset_fraction * len(dataset))
         print("Using {num_samples} out of {len(dataset)}")
-        sampler = torch.utils.data.RandomSampler(dataset, num_samples=num_samples)
+        sampler = torch.utils.data.RandomSampler(dataset, num_samples=num_samples, replacement=True)
     
         data_loader = torch.utils.data.DataLoader(
             dataset,
