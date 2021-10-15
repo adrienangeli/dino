@@ -30,7 +30,7 @@ class FeaturesDataset(torch.utils.data.Dataset):
         self.root = root
         self.split = "train" if train else "test"
         
-        device = 'gpu' if torch.cuda.is_available() else 'cpu'
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.prefix = prefix
         p_ = '' if self.prefix == '' else self.prefix + "_"
