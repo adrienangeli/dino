@@ -46,6 +46,7 @@
 
 - step:
     name: training
+    environment: jellysmack-aws-us-west-2-c5-xlarge
     image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     command:
       - python -m train {parameters}
