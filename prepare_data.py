@@ -109,6 +109,64 @@ def extract_features_sequential(model, data_loader, multiscale=False):
     return features, labels
 
 
+@torch.no_grad()
+def extract_features(model, data_loader, use_cuda=True, multiscale=False):
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    features = None
+    for samples, index, lbls in metric_logger.log_every(data_loader, 10):
+        samples = samples.cuda(non_blocking=True)
+        index = index.cuda(non_blocking=True)
+        lbls = lbls.cpu()
+        if multiscale:
+            feats = utils.multi_scale(samples, model)
+        else:
+            feats = model(samples).clone()
+
+        # init storage feature matrix
+        if dist.get_rank() == 0 and features is None:
+            features = torch.zeros(len(data_loader.dataset), feats.shape[-1])
+            labels = torch.zeros(len(data_loader.dataset), lbls.shape[-1], dtype=torch.long)
+            if use_cuda:
+                features = features.cuda(non_blocking=True)
+                labels = labels.cuda(non_blocking=True)
+            print(f"Storing features into tensor of shape {features.shape}")
+            print(f"Storing feature labels into tensor of shape {labels.shape}")
+
+        # get indexes from all processes
+        y_all = torch.empty(dist.get_world_size(), index.size(0), dtype=index.dtype, device=index.device)
+        y_l = list(y_all.unbind(0))
+        y_all_reduce = torch.distributed.all_gather(y_l, index, async_op=True)
+        y_all_reduce.wait()
+        index_all = torch.cat(y_l)
+
+        # share features between processes
+        feats_all = torch.empty(
+            dist.get_world_size(),
+            feats.size(0),
+            feats.size(1),
+            dtype=feats.dtype,
+            device=feats.device,
+        )
+        output_l = list(feats_all.unbind(0))
+        output_all_reduce = torch.distributed.all_gather(output_l, feats, async_op=True)
+        output_all_reduce.wait()
+
+        label_l = list(lbls_all.unbind(0))
+        label_all_reduce = torch.distributed.all_gather(label_l, lbls, async_op=True)
+        label_all_reduce.wait()
+
+        # update storage feature matrix
+        if dist.get_rank() == 0:
+            if use_cuda:
+                features.index_copy_(0, index_all, torch.cat(output_l))
+                labels.index_copy_(0, index_all, torch.cat(label_l))
+            else:
+                features.index_copy_(0, index_all.cpu(), torch.cat(output_l).cpu())
+                labels.index_copy_(0, index_all.cpu(), torch.cat(label_l).cpu())
+    return features, labels
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('DINO feature computation on an image dataset')
     parser.add_argument('--data_path', default='/path/to/dataset/')
@@ -120,7 +178,13 @@ if __name__ == '__main__':
     parser.add_argument('--patch_size', default=16, type=int, help='Patch resolution of the model.')
     parser.add_argument("--checkpoint_key", default="teacher", type=str,
         help='Key to use in the checkpoint (example: "teacher")')
+    parser.add_argument('--distributed', default=False, type=utils.bool_flag)
     args = parser.parse_args()
+
+    if args.distributed:
+        utils.init_distributed_mode(args)
+        cudnn.benchmark = True
+    
 
     print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
     
@@ -143,6 +207,10 @@ if __name__ == '__main__':
     else:
         print(f"Architecture {args.arch} non supported")
         sys.exit(1)
+
+    if args.distributed:
+        model.cuda()
+    
     model.eval()
 
     # load pretrained weights
@@ -184,16 +252,21 @@ if __name__ == '__main__':
 
         ############################################################################
         # extract features
-        train_features, train_labels = extract_features_sequential(model, data_loader_train, multiscale=args.multiscale)
+        train_features, train_labels = None, None
+        if args.distributed:
+            train_features, train_labels = extract_features(model, data_loader_train, multiscale=args.multiscale)
+        else:
+            train_features, train_labels = extract_features_sequential(model, data_loader_train, multiscale=args.multiscale)
+
+        if not args.distributed or utils.get_rank() == 0:
+            # normalize features
+            train_features = nn.functional.normalize(train_features, dim=1, p=2)
         
-        # normalize features
-        train_features = nn.functional.normalize(train_features, dim=1, p=2)
+            # save features
+            prefix = "train" if train is True else "test"
+            torch.save(train_features, os.path.join(args.output_path, prefix + '_features.pt'))
         
-        # save features
-        prefix = "train" if train is True else "test"
-        torch.save(train_features, os.path.join(args.output_path, prefix + '_features.pt'))
-        
-        # save labels
-        torch.save(train_labels, os.path.join(args.output_path, prefix + '_labels.pt'))
+            # save labels
+            torch.save(train_labels, os.path.join(args.output_path, prefix + '_labels.pt'))
     
     
