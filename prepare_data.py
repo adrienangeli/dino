@@ -57,12 +57,11 @@ def prepare_data(filepath, src, dest):
 
 
 class Food101Dataset(torchvision.datasets.ImageFolder):
-    def __init__(self, root_dir, transform, dataset_fraction, train):
+    def __init__(self, root_dir, transform, train):
         self.food_path = root_dir
         self.img_path = os.path.join(self.food_path, "images")
         self.img_ext = ".jpg"
         self.meta_path = os.path.join(self.food_path, "meta")
-        self.dataset_fraction = dataset_fraction
 
         self.split_dirname = "train" if train else "valid"
         self.split_fname = "train.txt" if train else "test.txt"
@@ -75,7 +74,7 @@ class Food101Dataset(torchvision.datasets.ImageFolder):
 
 
     def __len__(self):
-        return int(dataset_fraction * super().__len__())
+        return super().__len__()
 
     
     def __getitem__(self, index):
@@ -247,26 +246,29 @@ if __name__ == '__main__':
         print(mode + " mode!")
         print("--------------------------------------------------------")
         
-        dataset_train = Food101Dataset(args.data_path, transform, dataset_fraction, train)
-        sampler_train = torch.utils.data.SequentialSampler(dataset_train)
+        dataset = Food101Dataset(args.data_path, transform, train)
+
+        num_samples = int(args.dataset_fraction * len(dataset))
+        print("Using {num_samples} out of {len(dataset)}")
+        sampler = torch.utils.data.RandomSampler(dataset, num_samples=num_samples)
     
-        data_loader_train = torch.utils.data.DataLoader(
-            dataset_train,
-            sampler=sampler_train,
+        data_loader = torch.utils.data.DataLoader(
+            dataset,
+            sampler=sampler,
             batch_size=1,
             pin_memory=True,
             drop_last=False,
         )
 
-        print(f"dataset: {len(dataset_train)} imgs")
+        print(f"dataset: {len(dataset)} imgs")
 
         ############################################################################
         # extract features
         train_features, train_labels = None, None
         if args.distributed:
-            train_features, train_labels = extract_features(model, data_loader_train, args.use_cuda, multiscale=args.multiscale)
+            train_features, train_labels = extract_features(model, data_loader, args.use_cuda, multiscale=args.multiscale)
         else:
-            train_features, train_labels = extract_features_sequential(model, data_loader_train, multiscale=args.multiscale)
+            train_features, train_labels = extract_features_sequential(model, data_loader, multiscale=args.multiscale)
 
         if not args.distributed or utils.get_rank() == 0:
             # normalize features

@@ -27,7 +27,7 @@
       - name: dataset_fraction
         description: Floating number between 0 and 1 representing the fraction of the dataset we will use (e.g., 0.1 means we use 10% of all images in the dataset)
         type: float
-        default: 1
+        default: 0.1
       - name: output_path
         description: /path/to/where/computed/features/will/be/saved
         type: string
