@@ -26,11 +26,13 @@ import vision_transformer as vits
 
 
 class FeaturesDataset(torch.utils.data.Dataset):
-    def __init__(self, root, train):
+    def __init__(self, root, prefix, train):
         self.root = root
         self.split = "train" if train else "test"
-        self.features = torch.load(os.path.join(self.root, self.split + "_features.pt"))
-        self.labels = torch.load(os.path.join(self.root, self.split + "_labels.pt"))
+        self.prefix = prefix
+        p_ = '' if self.prefix == '' else self.prefix + "_"
+        self.features = torch.load(os.path.join(self.root, p_ + self.split + "_features.pt"))
+        self.labels = torch.load(os.path.join(self.root, p_ + self.split + "_labels.pt"))
 
         assert self.features.shape[0] == self.labels.shape[0]
 
@@ -92,6 +94,7 @@ def test_loop(dataloader, model, loss_fn):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Fine tuning DINO on Food101')
     parser.add_argument('--data_path', default='/destination/path/for/features/dataset', type=str)
+    parser.add_argument('--input_prefix', default='', type=str, help="Prefix prepended to input features and labels filenames.")
     parser.add_argument('--batch_size', default=512, type=int, help='Batch size')
     parser.add_argument('--nlayers', default=1, type=int, help='Number of layers in the MLP')
     parser.add_argument('--learning_rate', default=0.01, type=float, help='Learning rate SGD')
@@ -102,8 +105,8 @@ if __name__ == '__main__':
 
     print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
     
-    train_dataset = FeaturesDataset(args.data_path, True)
-    test_dataset = FeaturesDataset(args.data_path, False)
+    train_dataset = FeaturesDataset(args.data_path, args.prefix, True)
+    test_dataset = FeaturesDataset(args.data_path, args.prefix, False)
     
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True)
