@@ -2,6 +2,7 @@
     name: data_preparation
     image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
     command:
+      - pip install pandas
       - tar -zxvf /valohai/inputs/data/food-101.tar.gz -C /valohai/inputs/data
       - python -m prepare_data {parameters}
     inputs:
