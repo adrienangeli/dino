@@ -52,9 +52,9 @@
       - name: features_and_labels
         default:
           - datum://017c849e-6c35-62df-b283-ea4bea17f877
-	  - datum://017c849e-6548-62a2-8cd4-4e320bc0ee9e
-	  - datum://017c849e-5e77-31e4-fc69-bbf0566a0bf4
-	  - datum://017c849e-541f-e85c-1f78-3ace97b15e66
+          - datum://017c849e-6548-62a2-8cd4-4e320bc0ee9e
+          - datum://017c849e-5e77-31e4-fc69-bbf0566a0bf4
+          - datum://017c849e-541f-e85c-1f78-3ace97b15e66
     parameters:
       - name: data_path
         description: /path/to/dataset/
