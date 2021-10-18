@@ -164,6 +164,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Fine tuning DINO on Food101')
     parser.add_argument('--data_path', default='/destination/path/for/features/dataset', type=str)
     parser.add_argument('--input_prefix', default='', type=str, help="Prefix prepended to input features and labels filenames.")
+    parser.add_argument('--metrics_outpath', default='/destination/path/for/metrics_logging/', type=str)
     parser.add_argument('--batch_size', default=512, type=int, help='Batch size')
     parser.add_argument('--n_hidden_layers', default=1, type=int, help='Number of hiddent layers in the MLP (excluding bottleneck layer)')
     parser.add_argument('--learning_rate', default=0.035, type=float, help='Learning rate SGD')
@@ -220,12 +221,13 @@ if __name__ == '__main__':
 
     
     output_json_filename = os.path.join(
-        os.environ.get("VH_OUTPUTS_DIR", "."),
+        args.metrics_outpath,
         f"metrics-nhl-{args.n_hidden_layers}.json",
     )
     
     with open(output_json_filename, "w", encoding="UTF-8") as output:
-        json.dump({"loss": test_loss, "accuracy": test_acc}, output, indent=2)
+        json.dump({"loss": test_loss, "accuracy": test_acc, "n_hidden_layers": args.n_hidden_layers},
+                  output, indent=2)
 
     print("Done!")
     

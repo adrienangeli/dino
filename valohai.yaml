@@ -67,6 +67,10 @@
         description: Prefix prepended to input features and labels filenames
         type: string
         default: dino
+      - name: metrics_outpath
+        description: /destination/path/for/metrics_logging/
+        type: string
+        default: /valohai/outputs/metrics/
       - name: epochs
         description: Num of epochs
         type: integer
