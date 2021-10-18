@@ -30,7 +30,6 @@ import vision_transformer as vits
 from eval_linear import LinearClassifier
 
 
-
 class FeaturesDataset(torch.utils.data.Dataset):
     def __init__(self, root, prefix, train, device):
         self.root = root
@@ -205,7 +204,8 @@ if __name__ == '__main__':
     
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum)
-    
+
+    test_loss, test_acc = 0, 0
     for t in range(args.epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss, train_acc = train_loop(train_dataloader, model, loss_fn, optimizer, (args.distributed and args.use_cuda))
@@ -217,6 +217,15 @@ if __name__ == '__main__':
             logger.log('loss', train_loss)
             logger.log('test_accuracy', test_acc)
             logger.log('test_loss', test_loss)
+
+    
+    output_json_filename = os.path.join(
+        os.environ.get("VH_OUTPUTS_DIR", "."),
+        f"metrics-nhl-{args.n_hidden_layers}.json",
+    )
+    
+    with open(output_json_filename, "w", encoding="UTF-8") as output:
+        json.dump({"loss": test_loss, "accuracy": test_acc}, output, indent=2)
 
     print("Done!")
     
