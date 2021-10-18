@@ -68,13 +68,18 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
         print("train_loop() -> class prediction & loss calculation")
         samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
         pred = model(samples)
-        loss = loss_fn(pred, y)
+
+        labels = y.cuda(non_blocking=True) if use_cuda else y.cpu()
+        loss = loss_fn(pred, labels)
         
         # Backpropagation
         print("train_loop() -> backward prop & optim step")
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        if use_cuda:
+            torch.cuda.synchronize()
         
         if batch % 1 == 0:
             loss, current = loss.item(), batch * len(samples)
@@ -91,8 +96,13 @@ def test_loop(dataloader, model, loss_fn, use_cuda=False):
         for X, y in dataloader:
             samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
             pred = model(samples)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+
+            labels = y.cuda(non_blocking=True) if use_cuda else y.cpu()
+            test_loss += loss_fn(pred, labels).item()
+            correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+
+            if use_cuda:
+                torch.cuda.synchronize()
 
     test_loss /= num_batches
     correct /= size
