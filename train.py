@@ -26,11 +26,9 @@ import vision_transformer as vits
 
 
 class FeaturesDataset(torch.utils.data.Dataset):
-    def __init__(self, root, prefix, train):
+    def __init__(self, root, prefix, train, device):
         self.root = root
         self.split = "train" if train else "test"
-        
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.prefix = prefix
         p_ = '' if self.prefix == '' else self.prefix + "_"
@@ -110,9 +108,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
-    
-    train_dataset = FeaturesDataset(args.data_path, args.input_prefix, True)
-    test_dataset = FeaturesDataset(args.data_path, args.input_prefix, False)
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    train_dataset = FeaturesDataset(args.data_path, args.input_prefix, True, device)
+    test_dataset = FeaturesDataset(args.data_path, args.input_prefix, False, device)
     
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=True)
@@ -122,7 +121,7 @@ if __name__ == '__main__':
     #print((features_dim, num_classes))
     model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
                           in_dim=features_dim,
-                          out_dim=num_classes).to('cpu')
+                          out_dim=num_classes).to(device)
     model.eval()
     
     loss_fn = nn.CrossEntropyLoss()
