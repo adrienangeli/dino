@@ -4,11 +4,15 @@ import sys
 import pickle
 import argparse
 import random
+import json
+from typing import Optional, Dict
 
 from collections import defaultdict
 import collections
 from shutil import copy
 from shutil import copytree, rmtree
+
+import valohai
 
 import torch
 from torch import nn
@@ -58,6 +62,29 @@ class FeaturesDataset(torch.utils.data.Dataset):
 
 
 
+def log_metrics(epoch: int, logs: Dict) -> None:
+    """Function used to monitor the metrics
+
+    Args:
+        epoch (int): The current epoch
+        logs (Dict): A dictionnary containing the loss and the accuracy for the
+            current epoch
+    """
+    print()
+    print(
+        json.dumps(
+            {
+                "epoch": epoch,
+                "loss": str(logs["loss"]),
+                "accuracy": str(logs["accuracy"]),
+            }
+        )
+    )
+
+    with valohai.logger() as logger:
+        logger.log('epoch', epoch)
+        logger.log('accuracy', logs['accuracy'])
+        logger.log('loss', logs['loss'])
 
 
 
@@ -86,7 +113,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
 
 
 
-def test_loop(dataloader, model, loss_fn, use_cuda=False):
+def test_loop(dataloader, model, loss_fn, epoch, use_cuda=False):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
@@ -105,7 +132,13 @@ def test_loop(dataloader, model, loss_fn, use_cuda=False):
 
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+
+    logs = {"loss": test_loss, "accuracy": 100*correct}
+    log_metrics(epoch, logs)
+    #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    
+    
+            
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Fine tuning DINO on Food101')
@@ -161,7 +194,7 @@ if __name__ == '__main__':
     for t in range(args.epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_dataloader, model, loss_fn, optimizer, (args.distributed and args.use_cuda))
-        test_loop(test_dataloader, model, loss_fn, (args.distributed and args.use_cuda))
+        test_loop(test_dataloader, model, loss_fn, t, (args.distributed and args.use_cuda))
     print("Done!")
     
 
