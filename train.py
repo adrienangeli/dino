@@ -62,35 +62,11 @@ class FeaturesDataset(torch.utils.data.Dataset):
 
 
 
-def log_metrics(epoch: int, logs: Dict) -> None:
-    """Function used to monitor the metrics
-
-    Args:
-        epoch (int): The current epoch
-        logs (Dict): A dictionnary containing the loss and the accuracy for the
-            current epoch
-    """
-    print()
-    print(
-        json.dumps(
-            {
-                "epoch": epoch,
-                "loss": str(logs["loss"]),
-                "accuracy": str(logs["accuracy"]),
-            }
-        )
-    )
-
-    with valohai.logger() as logger:
-        logger.log('epoch', epoch)
-        logger.log('accuracy', logs['accuracy'])
-        logger.log('loss', logs['loss'])
-
-
-
-
 def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
     size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    train_loss, correct = 0, 0
+    
     for batch, (X, y) in enumerate(dataloader):                        
         # Compute prediction and loss
         samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
@@ -98,6 +74,8 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
 
         labels = y.cuda(non_blocking=True) if use_cuda else y.cpu()
         loss = loss_fn(pred, labels)
+        train_loss += loss.item()
+        correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
         
         # Backpropagation
         optimizer.zero_grad()
@@ -107,13 +85,18 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
         if use_cuda:
             torch.cuda.synchronize()
         
+        loss, current = loss.item(), batch * len(samples)
         if batch % 100 == 0:
-            loss, current = loss.item(), batch * len(samples)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
+    train_loss /= num_batches
+    correct /= size
+
+    return train_loss, correct
+        
 
 
-def test_loop(dataloader, model, loss_fn, epoch, use_cuda=False):
+def test_loop(dataloader, model, loss_fn, use_cuda=False):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
@@ -132,10 +115,9 @@ def test_loop(dataloader, model, loss_fn, epoch, use_cuda=False):
 
     test_loss /= num_batches
     correct /= size
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-    logs = {"loss": test_loss, "accuracy": 100*correct}
-    log_metrics(epoch, logs)
-    #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    return test_loss, correct
     
     
             
@@ -193,8 +175,16 @@ if __name__ == '__main__':
     
     for t in range(args.epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_dataloader, model, loss_fn, optimizer, (args.distributed and args.use_cuda))
-        test_loop(test_dataloader, model, loss_fn, t, (args.distributed and args.use_cuda))
+        train_loss, train_acc = train_loop(train_dataloader, model, loss_fn, optimizer, (args.distributed and args.use_cuda))
+        test_loss, test_acc = test_loop(test_dataloader, model, loss_fn, (args.distributed and args.use_cuda))
+
+        with valohai.logger() as logger:
+            logger.log('epoch', t)
+            logger.log('accuracy', train_acc)
+            logger.log('loss', train_loss)
+            logger.log('test_accuracy', test_acc)
+            logger.log('test_loss', test_loss)
+
     print("Done!")
     
 
