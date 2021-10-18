@@ -79,10 +79,10 @@
         description: Batch size
         type: integer
         default: 512
-      - name: nlayers
-        description: Num of layers in MLP
+      - name: n_hidden_layers
+        description: Num of hiddent layers in MLP
         type: integer
-        default: 2
+        default: 1
       - name: learning_rate
         description: Learning rate
         type: float
