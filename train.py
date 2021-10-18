@@ -77,7 +77,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
         optimizer.step()
         
         if batch % 1 == 0:
-            loss, current = loss.item(), batch * len(X)
+            loss, current = loss.item(), batch * len(samples)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     #print((features_dim, num_classes))
     model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
                           in_dim=features_dim,
-                          out_dim=num_classes).to(device)
+                          out_dim=num_classes)
 
     if args.distributed and args.use_cuda:
         model.cuda()
@@ -146,8 +146,8 @@ if __name__ == '__main__':
     
     for t in range(args.epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_dataloader, model, loss_fn, optimizer, args.use_cuda)
-        test_loop(test_dataloader, model, loss_fn, args.use_cuda)
+        train_loop(train_dataloader, model, loss_fn, optimizer, (args.distributed and args.use_cuda))
+        test_loop(test_dataloader, model, loss_fn, (args.distributed and args.use_cuda))
     print("Done!")
     
 
