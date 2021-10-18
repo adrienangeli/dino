@@ -115,7 +115,18 @@
 
 
 
-
-
-
-
+- pipeline:
+    name: Train and compare two models
+    nodes:
+      - name: train1
+        type: execution
+        step: training
+      - name: train2
+        type: execution
+        step: training
+      - name: find-best-model
+        type: execution
+        step: compare
+    edges:
+      - [train1.output.metrics-nhl-*.json, find-best-model.input.metrics]
+      - [train2.output.metrics-nhl-*.json, find-best-model.input.metrics]
