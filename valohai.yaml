@@ -70,7 +70,7 @@
       - name: metrics_outpath
         description: /destination/path/for/metrics_logging/
         type: string
-        default: /valohai/outputs/metrics/
+        default: /valohai/outputs/
       - name: epochs
         description: Num of epochs
         type: integer
