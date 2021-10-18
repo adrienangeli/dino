@@ -23,6 +23,7 @@ import numpy as np
 
 import utils
 import vision_transformer as vits
+from eval_linear import LinearClassifier
 
 
 
@@ -65,7 +66,6 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
     size = len(dataloader.dataset)
     for batch, (X, y) in enumerate(dataloader):                        
         # Compute prediction and loss
-        print("train_loop() -> class prediction & loss calculation")
         samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
         pred = model(samples)
 
@@ -73,7 +73,6 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
         loss = loss_fn(pred, labels)
         
         # Backpropagation
-        print("train_loop() -> backward prop & optim step")
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -81,7 +80,7 @@ def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
         if use_cuda:
             torch.cuda.synchronize()
         
-        if batch % 1 == 0:
+        if batch % 100 == 0:
             loss, current = loss.item(), batch * len(samples)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
@@ -116,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--nlayers', default=1, type=int, help='Number of layers in the MLP')
     parser.add_argument('--learning_rate', default=0.01, type=float, help='Learning rate SGD')
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum for SGD')
-    parser.add_argument('--epochs', default=10, type=int)
+    parser.add_argument('--epochs', default=100, type=int)
     parser.add_argument('--distributed', default=False, type=utils.bool_flag)
     parser.add_argument('--use_cuda', default=True, type=utils.bool_flag)
     parser.add_argument('--num_workers', default=10, type=int, help='Number of data loading workers per GPU.')
@@ -142,10 +141,15 @@ if __name__ == '__main__':
     features_dim = train_dataset.features_dim()
     num_classes = train_dataset.num_classes()
     #print((features_dim, num_classes))
-    model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
-                          in_dim=features_dim,
-                          out_dim=num_classes)
 
+    model = None
+    if args.nlayers > 1:
+        model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
+                              in_dim=features_dim,
+                              out_dim=num_classes)
+    else:
+        model = LinearClassifier(features_dim, num_labels=num_classes)
+    
     if args.distributed and args.use_cuda:
         model.cuda()
     
