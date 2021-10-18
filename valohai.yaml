@@ -86,3 +86,13 @@
         description: SGD optimizer momentum
         type: float
         default: 0.9
+      - name: distributed
+        description: Whether to enable distributed computing or not
+        type: flag
+        pass-true-as: --distributed=1
+        pass-false-as: --distributed=0
+        default: true
+
+
+
+
