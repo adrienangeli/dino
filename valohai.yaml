@@ -70,7 +70,7 @@
       - name: epochs
         description: Num of epochs
         type: integer
-        default: 500
+        default: 100
       - name: batch_size
         description: Batch size
         type: integer
@@ -78,11 +78,11 @@
       - name: nlayers
         description: Num of layers in MLP
         type: integer
-        default: 1
+        default: 2
       - name: learning_rate
         description: Learning rate
         type: float
-        default: 0.01
+        default: 0.035
       - name: momentum
         description: SGD optimizer momentum
         type: float

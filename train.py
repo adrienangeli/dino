@@ -61,6 +61,45 @@ class FeaturesDataset(torch.utils.data.Dataset):
         return len(set(self.labels[:, 0].tolist()))
 
 
+class MLP(nn.Module):
+    """Linear layer to train on top of frozen features"""
+    def __init__(self, dim, num_labels=101, n_hidden_layers=1):
+        super(MLP, self).__init__()
+        self.num_labels = num_labels
+        self.mlp = None
+        
+        n_hidden_layers = max(n_hidden_layers, 0)
+        if n_hidden_layers > 0:
+            hidden_dim=2048
+            bottleneck_dim=256
+            layers = [nn.Linear(dim, hidden_dim)]
+            layers.append(nn.GELU())
+            for _ in range(n_hidden_layers - 1):
+                layers.append(nn.Linear(hidden_dim, hidden_dim))
+                layers.append(nn.GELU())
+
+            layers.append(nn.Linear(hidden_dim, bottleneck_dim))
+            self.mlp = nn.Sequential(*layers)
+            
+            self.last_layer = nn.Linear(bottleneck_dim, num_labels)
+        else:
+            self.last_layer = nn.Linear(dim, num_labels)
+        
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            m.weight.data.normal_(mean=0.0, std=0.01)
+            m.bias.data.zero_()
+
+
+    def forward(self, x):
+        if self.mlp is not None:
+            x = self.mlp(x)
+        
+        x = self.last_layer(x)
+        return x
+
 
 def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
     size = len(dataloader.dataset)
@@ -127,8 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', default='/destination/path/for/features/dataset', type=str)
     parser.add_argument('--input_prefix', default='', type=str, help="Prefix prepended to input features and labels filenames.")
     parser.add_argument('--batch_size', default=512, type=int, help='Batch size')
-    parser.add_argument('--nlayers', default=1, type=int, help='Number of layers in the MLP')
-    parser.add_argument('--learning_rate', default=0.01, type=float, help='Learning rate SGD')
+    parser.add_argument('--n_hidden_layers', default=1, type=int, help='Number of hiddent layers in the MLP (excluding bottleneck layer)')
+    parser.add_argument('--learning_rate', default=0.035, type=float, help='Learning rate SGD')
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum for SGD')
     parser.add_argument('--epochs', default=100, type=int)
     parser.add_argument('--distributed', default=False, type=utils.bool_flag)
@@ -157,14 +196,8 @@ if __name__ == '__main__':
     num_classes = train_dataset.num_classes()
     #print((features_dim, num_classes))
 
-    model = None
-    if args.nlayers > 1:
-        model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
-                              in_dim=features_dim,
-                              out_dim=num_classes)
-    else:
-        model = LinearClassifier(features_dim, num_labels=num_classes)
-    
+    model = MLP(features_dim, num_labels=num_classes, n_hidden_layers=args.n_hidden_layers)
+        
     if args.distributed and args.use_cuda:
         model.cuda()
     
