@@ -8,18 +8,18 @@ from collections import namedtuple
 import fire
 
 def main(
-    prediction_dir: str,
+    metrics_dir: str,
 ) -> None:
     """Compare executions
 
     Args:
-        prediction_dir (str): The path of the directory containing the
+        metrics_dir (str): The path of the directory containing the
         predictions
     """
-    if not os.path.isdir(prediction_dir):
+    if not os.path.isdir(metrics_dir):
         raise Exception("--prediction-dir must be a directory")
 
-    json_files = glob.glob(f"{prediction_dir}/*.json")
+    json_files = glob.glob(f"{metrics_dir}/*.json")
     if not json_files:
         raise Exception(f"no .json predictions under {json_files}")
 

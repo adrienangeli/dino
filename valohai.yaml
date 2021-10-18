@@ -98,6 +98,24 @@
         pass-false-as: --distributed=0
         default: false
 
+- step:
+    name: compare
+    environment: jellysmack-aws-us-west-2-c5-xlarge
+    image: pytorch/pytorch:1.9.0-cuda10.2-cudnn7-runtime
+    command:
+      - pip install valohai-utils fire
+      - python -m compare {parameters}
+    inputs:
+      - name: metrics
+    parameters:
+      - name: metrics_dir
+        description: /path/to/metrics/files/to/compare/
+        type: string
+        default: /valohai/inputs/metrics/
+
+
+
+
 
 
 
