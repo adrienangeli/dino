@@ -16,6 +16,7 @@ from torchvision import models as torchvision_models
 from torchvision import transforms as pth_transforms
 from torchvision import datasets
 from torch.utils.data import Dataset, DataLoader
+import torch.backends.cudnn as cudnn
 
 from PIL import Image, ImageFile
 import numpy as np
@@ -60,12 +61,13 @@ class FeaturesDataset(torch.utils.data.Dataset):
 
 
 
-def train_loop(dataloader, model, loss_fn, optimizer):
+def train_loop(dataloader, model, loss_fn, optimizer, use_cuda=False):
     size = len(dataloader.dataset)
     for batch, (X, y) in enumerate(dataloader):                        
         # Compute prediction and loss
         print("train_loop() -> class prediction & loss calculation")
-        pred = model(X)
+        samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
+        pred = model(samples)
         loss = loss_fn(pred, y)
         
         # Backpropagation
@@ -80,14 +82,15 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
 
 
-def test_loop(dataloader, model, loss_fn):
+def test_loop(dataloader, model, loss_fn, use_cuda=False):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
 
     with torch.no_grad():
         for X, y in dataloader:
-            pred = model(X)
+            samples = X.cuda(non_blocking=True) if use_cuda else X.cpu()
+            pred = model(samples)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
 
@@ -104,11 +107,21 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', default=0.01, type=float, help='Learning rate SGD')
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum for SGD')
     parser.add_argument('--epochs', default=10, type=int)
+    parser.add_argument('--distributed', default=False, type=utils.bool_flag)
+    parser.add_argument('--use_cuda', default=True, type=utils.bool_flag)
+    parser.add_argument('--num_workers', default=10, type=int, help='Number of data loading workers per GPU.')
+    parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up
+        distributed training; see https://pytorch.org/docs/stable/distributed.html""")
+    parser.add_argument("--local_rank", default=0, type=int, help="Please ignore and do not set this argument.")
     
     args = parser.parse_args()
 
     print("\n".join("%s: %s" % (k, str(v)) for k, v in sorted(dict(vars(args)).items())))
 
+    if args.distributed and args.use_cuda:
+        utils.init_distributed_mode(args)
+        cudnn.benchmark = True
+    
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     train_dataset = FeaturesDataset(args.data_path, args.input_prefix, True, device)
     test_dataset = FeaturesDataset(args.data_path, args.input_prefix, False, device)
@@ -122,6 +135,10 @@ if __name__ == '__main__':
     model = vits.DINOHead(nlayers=args.nlayers, norm_last_layer=True,
                           in_dim=features_dim,
                           out_dim=num_classes).to(device)
+
+    if args.distributed and args.use_cuda:
+        model.cuda()
+    
     model.eval()
     
     loss_fn = nn.CrossEntropyLoss()
@@ -129,8 +146,8 @@ if __name__ == '__main__':
     
     for t in range(args.epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_dataloader, model, loss_fn, optimizer)
-        test_loop(test_dataloader, model, loss_fn)
+        train_loop(train_dataloader, model, loss_fn, optimizer, args.use_cuda)
+        test_loop(test_dataloader, model, loss_fn, args.use_cuda)
     print("Done!")
     
 
